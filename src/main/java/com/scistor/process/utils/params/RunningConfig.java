@@ -8,7 +8,7 @@ public interface RunningConfig {
 
 	String ZK_COMPONENT_LOCATION = SystemConfig.getString("zk_compenent_location");
 
-	String ZK_LIVING_SLAVES = SystemConfig.getString("zk_living_slaves");
+	String ZK_RUNNING_OPERATORS = SystemConfig.getString("zk_running_operators");
 
 	Integer ZK_SESSION_TIMEOUT = 365*24*60*60*1000;
 

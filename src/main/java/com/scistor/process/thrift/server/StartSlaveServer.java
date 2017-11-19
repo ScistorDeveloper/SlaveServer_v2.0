@@ -57,18 +57,6 @@ public class StartSlaveServer implements RunningConfig{
         LOG.info("thrift nio channel selector  init finished...");
         TThreadedSelectorServer server=new TThreadedSelectorServer(m_args);
         LOG.info("server starting...");
-
-        try {
-            ZooKeeper zookeeper = ZKOperator.getZookeeperInstance();
-            SlaveLocation loc = new SlaveLocation();
-            hostAddress = InetAddress.getLocalHost().getHostAddress();
-            loc.setIp(hostAddress);
-            loc.setPort(PORT);
-            ZKOperator.registerSlaveInfo(zookeeper, null, loc, company);
-        } catch (Exception e) {
-            LOG.error(e);
-        }
-
         server.serve();
     }
 
