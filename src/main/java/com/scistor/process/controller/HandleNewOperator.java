@@ -21,10 +21,11 @@ public class HandleNewOperator implements Runnable {
 
 	@Override
 	public void run() {
+		TransformInterface entry = null;
 		try {
 			String mainClass = operator.get("mainclass");
 			String taskType = operator.get("task_type");
-			TransformInterface entry = (TransformInterface) OperatorScheduler.classLoader.loadClass(mainClass).newInstance();
+			entry = (TransformInterface) OperatorScheduler.classLoader.loadClass(mainClass).newInstance();
 			entry.init(operator, queue);
 			if(taskType.equals("producer")) {
 				entry.producer();
@@ -33,6 +34,10 @@ public class HandleNewOperator implements Runnable {
 			}
 		}catch (Exception e){
 			LOG.error(e.toString());
+		} finally {
+			if (null != entry) {
+				entry.close();
+			}
 		}
 	}
 

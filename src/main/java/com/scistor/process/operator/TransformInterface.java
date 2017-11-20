@@ -12,5 +12,6 @@ public interface TransformInterface {
     List<String> validate();//参数校验
     void producer();//该算子数据入Kafka的逻辑
     void consumer();//从Kafka中都该算子数据并做合并的逻辑
+    void close();
 
 }
