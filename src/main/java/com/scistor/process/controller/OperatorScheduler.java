@@ -1,11 +1,9 @@
 package com.scistor.process.controller;
 
-import com.scistor.process.operator.impl.WhiteListFilterOperator;
 import com.scistor.process.parser.IParser;
 import com.scistor.process.record.Record;
 import com.scistor.process.utils.params.RunningConfig;
 import com.scistor.process.utils.params.SystemConfig;
-import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -49,6 +47,8 @@ public class OperatorScheduler implements RunningConfig{
                         parserEntity.process();
                     }
                 });
+                thread.setName("parseMainClass");
+                thread.start();
             } catch (Exception e) {
                 LOG.error("数据解析算子加载异常", e);
             }
