@@ -23,18 +23,12 @@ public class StartSlaveServer implements RunningConfig{
 
     private static final Logger LOG =  Logger.getLogger(StartSlaveServer.class);
     private static int PORT = Integer.parseInt(SystemConfig.getString("thrift_server_port"));
-    private static String company;
 
     public static void main(String[] args) throws NumberFormatException, TTransportException {
-        if (args.length < 1) {
-            LOG.error("Please specify the company name which this machine belongs to");
-            return;
-        }
-        company = args[0];
-        start(args);
+        start();
     }
 
-    public static void start(String[] args) throws NumberFormatException, TTransportException{
+    public static void start() throws NumberFormatException, TTransportException{
         TProcessor processor = new SlaveService.Processor<SlaveService.Iface>(new SlaveServiceImpl());
         TNonblockingServerSocket serverSocket=new TNonblockingServerSocket(PORT);
         LOG.info("thrift transport init finished...");

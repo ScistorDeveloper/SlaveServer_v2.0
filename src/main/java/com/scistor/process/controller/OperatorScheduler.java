@@ -36,19 +36,24 @@ public class OperatorScheduler implements RunningConfig{
         //为系统中的算子初始化消息队列，当系统刚启动时，只有一个内置的白名单过滤算子
         QUEUE_SIZE = Integer.parseInt(SystemConfig.getString("queue_size"));
 
-        //读配置文件，决定初始化哪一个数据解析算子
-        String parseMainClass = SystemConfig.getString("data_parser");
-        try {
-            final IParser parserEntity = (IParser) classLoader.loadClass(parseMainClass).newInstance();
-            Thread thread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    parserEntity.process();
-                }
-            });
-        } catch (Exception e) {
-            LOG.error("数据解析算子加载异常", e);
+        //只有部署在太极集群上的从节点要进行数据解析，部署在赛思的从节点只处理汇聚操作
+        String company = SystemConfig.getString("slave_server_location");
+        if(company.equals("other")) {
+            //读配置文件，决定初始化哪一个数据解析算子
+            String parseMainClass = SystemConfig.getString("data_parser");
+            try {
+                final IParser parserEntity = (IParser) classLoader.loadClass(parseMainClass).newInstance();
+                Thread thread = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        parserEntity.process();
+                    }
+                });
+            } catch (Exception e) {
+                LOG.error("数据解析算子加载异常", e);
+            }
         }
+
     }
 
     public static void scheduler(List<Map<String, String>> operators, boolean consumer) {
