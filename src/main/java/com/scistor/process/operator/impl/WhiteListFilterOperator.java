@@ -51,7 +51,6 @@ public class WhiteListFilterOperator implements TransformInterface {
             props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
             props.put("request.required.acks", "1");
             producer = new KafkaProducer<String, String>(props);
-            TopicUtil.createTopic(zookeeper_addr, topic);
         } else if (task_type.equals("consumer")) {
             props.put("zookeeper.connect", zookeeper_addr);
             props.put("auto.offset.reset","smallest");

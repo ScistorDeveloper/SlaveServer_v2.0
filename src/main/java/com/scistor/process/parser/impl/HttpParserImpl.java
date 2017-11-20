@@ -118,7 +118,7 @@ public class HttpParserImpl implements IParser {
         if(lines.size() > 0) {
             data.put("host", host);
             line = StringUtils.join(lines, "[[--]]");
-            if (line.substring(0, 3).equals("GET")) {
+            if (line.indexOf("GET") >= 0) {
                 //GET 数据
                 String json = lines.get(lines.size()-1).replace("[[:]]",":");
                 data.put("action_type","GET");
@@ -136,11 +136,11 @@ public class HttpParserImpl implements IParser {
                     }
                 }catch (Exception e){
                     //数据乱码等问题
-                    LOG.error("解析GET数据异常, 数据中可能包含乱码或JSON格式不正确");
+                    LOG.error("解析GET数据异常, 数据中可能包含乱码或JSON格式不正确", e);
                     data.clear();
                     return data;
                 }
-            } else if (line.substring(0, 4).equals("POST")){
+            } else {
                 //POST 数据
                 data.put("action_type","POST");
                 for (String li : lines){
