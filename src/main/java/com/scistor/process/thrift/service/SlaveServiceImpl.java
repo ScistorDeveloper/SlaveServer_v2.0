@@ -1,6 +1,7 @@
 package com.scistor.process.thrift.service;
 
 import com.scistor.process.controller.OperatorScheduler;
+import com.scistor.process.operator.TransformInterface;
 import com.scistor.process.pojo.SlaveLocation;
 import com.scistor.process.utils.ZKOperator;
 import com.scistor.process.utils.params.RunningConfig;
@@ -12,6 +13,7 @@ import org.apache.zookeeper.ZooKeeper;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -38,7 +40,20 @@ public class SlaveServiceImpl implements SlaveService.Iface, RunningConfig {
             OperatorScheduler.queueMap.remove(operatorMainClass);
             cancleOperatorThread(operatorMainClass, false);
         } else {
-            cancleOperatorThread(operatorMainClass, true);
+            Class clazz = null;
+            try {
+                clazz = Class.forName(operatorMainClass);
+                Object o = clazz.newInstance();
+                Field[] fields = clazz.getDeclaredFields();
+                for( Field field : fields ){
+                    if (field.getName().equals("shutdown")) {
+                        field.setAccessible(true);
+                        field.setBoolean(o, true);
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 

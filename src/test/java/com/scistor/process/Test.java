@@ -2,9 +2,11 @@ package com.scistor.process;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.scistor.process.operator.impl.WhiteListFilterOperator;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
+import java.lang.reflect.Field;
 import java.util.*;
 
 /**
@@ -13,9 +15,27 @@ import java.util.*;
 public class Test {
 
     public static void main(String[] args) throws Exception {
-        File file = new File("D:\\HS\\fulltext\\LXX1121017084218178061210290081660008020170811000048131100019702_138_1389999.html");
-        BufferedReader br = new BufferedReader(new FileReader(file));
-        Map<String,String> data = getMap(br);
+//        File file = new File("D:\\HS\\fulltext\\LXX1121017084218178061210290081660008020170811000048131100019702_138_1389999.html");
+//        BufferedReader br = new BufferedReader(new FileReader(file));
+//        Map<String,String> data = getMap(br);
+
+        Class clazz = null;
+        try {
+            clazz = Class.forName("com.scistor.process.operator.impl.WhiteListFilterOperator");
+            Object o = clazz.newInstance();
+            Field[] fields = clazz.getDeclaredFields();
+            for( Field field : fields ){
+                if (field.getName().equals("shutdown")) {
+                    field.setAccessible(true);
+                    field.setBoolean(o, false);
+                }
+            }
+            WhiteListFilterOperator w = new WhiteListFilterOperator();
+            System.out.println(w.isShutdown());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     private static Map<String,String> getMap(BufferedReader br) throws Exception {

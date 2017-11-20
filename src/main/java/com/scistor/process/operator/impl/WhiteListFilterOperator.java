@@ -24,6 +24,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 public class WhiteListFilterOperator implements TransformInterface {
 
     private static final Log LOG = LogFactory.getLog(WhiteListFilterOperator.class);
+    private static boolean shutdown = true;
     private String zookeeper_addr;
     private String topic = "com.scistor.process.operator.impl.WhiteListFilterOperator";
     private String mainclass;
@@ -53,7 +54,7 @@ public class WhiteListFilterOperator implements TransformInterface {
             producer = new KafkaProducer<String, String>(props);
         } else if (task_type.equals("consumer")) {
             props.put("zookeeper.connect", zookeeper_addr);
-            props.put("auto.offset.reset","largest");//smallest
+            props.put("auto.offset.reset","smallest");
             props.put("group.id", "HS");
             props.put("zookeeper.session.timeout.ms", "86400000");
             props.put("zookeeper.sync.time.ms", "5000");
@@ -61,6 +62,7 @@ public class WhiteListFilterOperator implements TransformInterface {
             props.put("auto.commit.interval.ms", "5000");
             topicCountMap.put(topic, 1);
             consumer = Consumer.createJavaConsumerConnector(new ConsumerConfig(props));
+            shutdown = false;
         }
 
     }
@@ -101,26 +103,29 @@ public class WhiteListFilterOperator implements TransformInterface {
     public void consumer() {
 
         Map<String, List<KafkaStream<byte[], byte[]>>> msgStreams = consumer.createMessageStreams(topicCountMap);
-        KafkaStream<byte[], byte[]> stream = msgStreams.get(topic).get(0);
+        List<KafkaStream<byte[], byte[]>> msgStreamList = msgStreams.get(topic);
 
-//        Thread[] threads = new Thread[msgStreamList.size()];
-//        for (int i = 0; i < threads.length; i++) {
-//            threads[i] = new Thread(new HanldMessageThread(msgStreamList.get(i)));
-//            threads[i].setName(mainclass);
-//            threads[i].start();
-//        }
-
-        try {
-            ConsumerIterator<byte[], byte[]> iterator = stream.iterator();
-            while (iterator.hasNext()) {
-                String message = new String(iterator.next().message());
-                LOG.info(String.format("已经在Kafka topic:[%s], 消费一条数据:[%s]", topic, message));
-            }
-        } catch (Exception e) {
-
-        } finally {
-            consumer.shutdown();
+        Thread[] threads = new Thread[msgStreamList.size()];
+        for (int i = 0; i < threads.length; i++) {
+            threads[i] = new Thread(new HanldMessageThread(msgStreamList.get(i)));
+            threads[i].setName(mainclass);
+            threads[i].start();
         }
+
+        while (true) {
+            if (shutdown) {
+                System.out.println("SHUTDOWN!!!!!");
+                consumer.shutdown();
+                break;
+            }
+        }
+
+//        ConsumerIterator<byte[], byte[]> iterator = stream.iterator();
+//        while (iterator.hasNext()) {
+//            String message = new String(iterator.next().message());
+//            LOG.info(String.format("已经在Kafka topic:[%s], 消费一条数据:[%s]", topic, message));
+//            consumer.shutdown();
+//        }
 
 
     }
@@ -153,6 +158,14 @@ public class WhiteListFilterOperator implements TransformInterface {
 
         }
 
+    }
+
+    public static boolean isShutdown() {
+        return shutdown;
+    }
+
+    public static void setShutdown(boolean shutdown) {
+        WhiteListFilterOperator.shutdown = shutdown;
     }
 
 }
