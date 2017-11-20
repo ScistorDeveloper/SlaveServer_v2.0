@@ -2,6 +2,7 @@ package com.scistor.process.operator.impl;
 
 import com.scistor.process.operator.TransformInterface;
 import com.scistor.process.record.Record;
+import com.scistor.process.record.extend.HttpRecord;
 import com.scistor.process.utils.Map2String;
 import com.scistor.process.utils.TopicUtil;
 import kafka.consumer.Consumer;
@@ -75,7 +76,7 @@ public class WhiteListFilterOperator implements TransformInterface {
         try {
             while(true){
                 if(queue.size() > 0) {
-                    Map<String, String> record = (Map<String, String>) queue.take();
+                    Map<String, String> record = ((HttpRecord)queue.take()).getRecord();
                     String host = record.get("host");
                     if (null != host && !"".equals(host)) {
                         String line = Map2String.transMapToString(record);
