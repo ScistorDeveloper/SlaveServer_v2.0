@@ -124,11 +124,18 @@ public class WhiteListFilterOperator implements TransformInterface {
         }
 
         public void run() {
-            ConsumerIterator<byte[], byte[]> iterator = kafkaStream.iterator();
-            while (iterator.hasNext()) {
-                String message = new String(iterator.next().message());
-                LOG.info(String.format("已经在Kafka topic:[%s], 消费一条数据:[%s]", topic, message));
+            try {
+                ConsumerIterator<byte[], byte[]> iterator = kafkaStream.iterator();
+                while (iterator.hasNext()) {
+                    String message = new String(iterator.next().message());
+                    LOG.info(String.format("已经在Kafka topic:[%s], 消费一条数据:[%s]", topic, message));
+                }
+            } catch (Exception e) {
+
+            } finally {
+                consumer.shutdown();
             }
+
         }
 
     }

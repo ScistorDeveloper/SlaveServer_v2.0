@@ -38,19 +38,24 @@ public class HttpParserImpl implements IParser {
 
     private void monitorRootDir() throws Exception {
         while(true) {
+            System.out.println("updating...");
             File rootFileDir = new File(ROOTDIR);
             File[] dayFileDirs = rootFileDir.listFiles();
             List<File> fileList = new ArrayList<File>();
             for (File dir : dayFileDirs) {
                 if (!handledDirs.contains(dir.getName())) {
                     getFileList(dir, fileList);
+                    int current = 1;
                     for (File zipFile : fileList) {
+                        System.out.println(String.format("current zip file is:[%s]", current));
                         parse(zipFile);
+                        current++;
+                        Thread.sleep(20);
                     }
                     handledDirs.add(dir.getName());
                 }
             }
-            Thread.sleep(24 * 60 * 60 * 1000);
+            Thread.sleep(1000);
         }
     }
 
