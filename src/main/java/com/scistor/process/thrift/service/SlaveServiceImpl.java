@@ -40,13 +40,6 @@ public class SlaveServiceImpl implements SlaveService.Iface, RunningConfig {
         } else {
             cancleOperatorThread(operatorMainClass, true);
         }
-        //在ZK上将其从正在运行算子路径中删除
-        try {
-            ZooKeeper zookeeper = ZKOperator.getZookeeperInstance();
-            ZKOperator.deleteZNode(zookeeper, null, ZK_RUNNING_OPERATORS + "/" + operatorMainClass);
-        } catch (Exception e) {
-            LOG.error(String.format("remove operator:[%s] capture an exception", operatorMainClass), e);
-        }
     }
 
     @Override
