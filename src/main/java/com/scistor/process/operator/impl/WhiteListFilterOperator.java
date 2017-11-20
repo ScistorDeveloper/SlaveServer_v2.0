@@ -74,6 +74,7 @@ public class WhiteListFilterOperator implements TransformInterface {
     public void producer() {
         try {
             while(true){
+                System.out.println("producing...");
                 if(queue.size() > 0) {
                     Map<String, String> record = ((HttpRecord)queue.take()).getRecord();
                     String host = record.get("host");
@@ -84,6 +85,7 @@ public class WhiteListFilterOperator implements TransformInterface {
                         LOG.info(String.format("一条数据[%s]已经写入Kafka, topic:[%s]", host+"|| "+line, topic));
                     }
                 }else {
+                    System.out.println("waiting...");
                     Thread.sleep(1000);
                 }
             }

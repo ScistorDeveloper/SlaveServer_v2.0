@@ -55,6 +55,7 @@ public class HttpParserImpl implements IParser {
     }
 
     public void parse(File file) throws Exception {
+        System.out.println("parsing....");
         ZipFile zipFile = new ZipFile(file, Charset.forName("GBK"));
         Enumeration entries = zipFile.entries();
         while(entries.hasMoreElements()) {
