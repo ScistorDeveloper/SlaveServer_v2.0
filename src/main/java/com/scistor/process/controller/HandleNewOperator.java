@@ -35,9 +35,7 @@ public class HandleNewOperator implements Runnable {
 		}catch (Exception e){
 			LOG.error(e.toString());
 		} finally {
-			if (null != entry) {
-				entry.close();
-			}
+
 		}
 	}
 

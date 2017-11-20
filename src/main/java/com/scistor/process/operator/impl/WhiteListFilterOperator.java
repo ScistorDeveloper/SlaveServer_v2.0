@@ -101,16 +101,20 @@ public class WhiteListFilterOperator implements TransformInterface {
     public void consumer() {
 
         Map<String, List<KafkaStream<byte[], byte[]>>> msgStreams = consumer.createMessageStreams(topicCountMap);
-        List<KafkaStream<byte[], byte[]>> msgStreamList = msgStreams.get(topic);
+        KafkaStream<byte[], byte[]> stream = msgStreams.get(topic).get(0);
 
-        Thread[] threads = new Thread[msgStreamList.size()];
-        for (int i = 0; i < threads.length; i++) {
-            threads[i] = new Thread(new HanldMessageThread(msgStreamList.get(i)));
-            threads[i].setName(mainclass);
-            threads[i].start();
+//        Thread[] threads = new Thread[msgStreamList.size()];
+//        for (int i = 0; i < threads.length; i++) {
+//            threads[i] = new Thread(new HanldMessageThread(msgStreamList.get(i)));
+//            threads[i].setName(mainclass);
+//            threads[i].start();
+//        }
+
+        ConsumerIterator<byte[], byte[]> iterator = stream.iterator();
+        while (iterator.hasNext()) {
+            String message = new String(iterator.next().message());
+            LOG.info(String.format("已经在Kafka topic:[%s], 消费一条数据:[%s]", topic, message));
         }
-
-        LOG.info(String.format("Number of thread is [%s]", threads.length));
 
     }
 

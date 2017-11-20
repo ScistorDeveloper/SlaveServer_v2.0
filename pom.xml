@@ -42,6 +42,7 @@
     </plugins>
     <defaultGoal>compile</defaultGoal>
   </build>
+
   <packaging>jar</packaging>
 
   <name>SlaveServer</name>
