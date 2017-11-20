@@ -53,7 +53,7 @@ public class WhiteListFilterOperator implements TransformInterface {
             producer = new KafkaProducer<String, String>(props);
         } else if (task_type.equals("consumer")) {
             props.put("zookeeper.connect", zookeeper_addr);
-            props.put("auto.offset.reset","smallest");
+            props.put("auto.offset.reset","largest");//smallest
             props.put("group.id", "HS");
             props.put("zookeeper.session.timeout.ms", "86400000");
             props.put("zookeeper.sync.time.ms", "5000");
