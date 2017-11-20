@@ -1,9 +1,7 @@
 package com.scistor.process.thrift.server;
 
-import com.scistor.process.pojo.SlaveLocation;
 import com.scistor.process.thrift.service.SlaveService;
 import com.scistor.process.thrift.service.SlaveServiceImpl;
-import com.scistor.process.utils.ZKOperator;
 import com.scistor.process.utils.params.RunningConfig;
 import com.scistor.process.utils.params.SystemConfig;
 import org.apache.log4j.Logger;
@@ -14,9 +12,7 @@ import org.apache.thrift.server.TThreadedSelectorServer;
 import org.apache.thrift.transport.TFramedTransport;
 import org.apache.thrift.transport.TNonblockingServerSocket;
 import org.apache.thrift.transport.TTransportException;
-import org.apache.zookeeper.ZooKeeper;
 
-import java.net.InetAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -26,7 +22,6 @@ import java.util.concurrent.Executors;
 public class StartSlaveServer implements RunningConfig{
 
     private static final Logger LOG =  Logger.getLogger(StartSlaveServer.class);
-    private static String hostAddress;
     private static int PORT = Integer.parseInt(SystemConfig.getString("thrift_server_port"));
     private static String company;
 

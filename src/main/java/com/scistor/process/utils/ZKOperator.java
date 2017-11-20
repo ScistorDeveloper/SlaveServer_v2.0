@@ -109,49 +109,10 @@ public class ZKOperator implements RunningConfig {
 		}
 	}
 
-	public static List<SlaveLocation> getLivingSlaves(ZooKeeper zookeeper) throws KeeperException, InterruptedException{
-		LOG.info("Getting living slaves in zookeeper...");
-		if(Objects.equal(zookeeper, null)){
-			throw new IllegalArgumentException("zookeeper instance is not available....,zookeeper=="+zookeeper);
-		}
-		List<SlaveLocation> list = new ArrayList<SlaveLocation>();
-		List<String> children = zookeeper.getChildren(ZK_LIVING_SLAVES, false);
-		for(String child : children){
-			SlaveLocation loc = new SlaveLocation();
-			loc.setIp(child.split(":")[0]);
-			loc.setPort(Integer.parseInt(child.split(":")[1]));
-			list.add(loc);
-		}
-		return list;
-	}
-
-	public static void registerSlaveInfo(ZooKeeper zookeeper, CountDownLatch cdl, SlaveLocation location, String company) throws InterruptedException, KeeperException{
-		if(Objects.equal(zookeeper, null)){
-			throw new IllegalArgumentException("zookeeper instance is not available....,zookeeper==" + zookeeper);
-		}
-		if(Objects.equal(location, null)){
-			throw new IllegalArgumentException("thrift location instance is not available....,location==" + location);
-		}
-		if(!Objects.equal(cdl, null)){
-			cdl.await();
-		}
-		String address = location.getIp() + ":" + location.getPort();
-		byte[] info = location.toJsonString().getBytes();
-		String zpath = ZK_LIVING_SLAVES + "/" + company + "/" + address;
-		if(zookeeper.exists(zpath, false) == null){
-			zookeeper.create(zpath, info, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
-		}else{
-			LOG.info(String.format("znode:[%s] is exist, will delete it before save slave thrift service location info", zpath));
-			zookeeper.delete(zpath, -1);
-			zookeeper.create(zpath,info, ZooDefs.Ids.OPEN_ACL_UNSAFE,CreateMode.EPHEMERAL);
-		}
-		LOG.info(String.format("save slave info on zPath:[%s], info:[%s]", zpath, location.toJsonString()));
-	}
-
 	public static void main(String[] args) throws IOException, KeeperException, InterruptedException {
-		ZooKeeper zookeeper = ZKOperator.getZookeeperInstance();
-		ZKOperator.createZnode(zookeeper, ZK_LIVING_SLAVES + "/other", "", null);
-		zookeeper.close();
+//		ZooKeeper zookeeper = ZKOperator.getZookeeperInstance();
+//		ZKOperator.createZnode(zookeeper, ZK_LIVING_SLAVES + "/other", "", null);
+//		zookeeper.close();
 	}
 
 }
