@@ -35,7 +35,6 @@ public class OperatorScheduler implements RunningConfig{
 
         //为系统中的算子初始化消息队列，当系统刚启动时，只有一个内置的白名单过滤算子
         QUEUE_SIZE = Integer.parseInt(SystemConfig.getString("queue_size"));
-        queueMap.put("com.scistor.process.operator.impl.WhiteListFilterOperator", new ArrayBlockingQueue<Record>(QUEUE_SIZE));
 
         //读配置文件，决定初始化哪一个数据解析算子
         String parseMainClass = SystemConfig.getString("data_parser");
@@ -50,20 +49,6 @@ public class OperatorScheduler implements RunningConfig{
         } catch (Exception e) {
             LOG.error("数据解析算子加载异常", e);
         }
-
-        //开启内置的白名单过滤算子
-        final WhiteListFilterOperator whiteListFilterOperator = new WhiteListFilterOperator();
-        Map<String, String> config = new HashedMap();
-        whiteListFilterOperator.init(config, queueMap.get("com.scistor.process.operator.impl.WhiteListFilterOperator"));
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                whiteListFilterOperator.producer();
-            }
-        });
-        thread.setName("com.scistor.process.operator.impl.WhiteListFilterOperator");
-        thread.start();
-        //在主节点中完成白名单过滤算子的汇聚
     }
 
     public static void scheduler(List<Map<String, String>> operators, boolean consumer) {
