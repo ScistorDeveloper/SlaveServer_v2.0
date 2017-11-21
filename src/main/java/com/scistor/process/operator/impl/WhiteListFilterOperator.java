@@ -24,6 +24,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -189,8 +190,9 @@ public class WhiteListFilterOperator implements TransformInterface {
                 //进行批量操作，节省资源
                 if (index > BATCH_SIZE) {
 //                    updateRedis();
-                    writeToHDFS();
                     hostCount.clear();
+                    writeToHDFS();
+                    messages.clear();
                     index = 0;
                 }
                 index++;
@@ -225,7 +227,7 @@ public class WhiteListFilterOperator implements TransformInterface {
         try {
             output = fs.create(new Path(PATH, System.currentTimeMillis()+".data"));
             for(String message : messages) { // 写入数据
-                output.write(message.getBytes("UTF-8"));
+                output.write((message + "\n").getBytes("UTF-8"));
                 output.flush();
             }
         } catch (Exception e) {
