@@ -189,9 +189,11 @@ public class WhiteListFilterOperator implements TransformInterface {
                 //进行批量操作，节省资源
                 if (index > BATCH_SIZE) {
 //                    updateRedis();
+                    writeToHDFS();
                     hostCount.clear();
                     index = 0;
                 }
+                index++;
                 LOG.info(String.format("已经在Kafka topic:[%s], 消费一条数据:[%s]", topic, message));
             }
         }
