@@ -188,8 +188,8 @@ public class WhiteListFilterOperator implements TransformInterface {
                     hostCount.put(host, hostCount.get(host) + 1);
                 }
                 //进行批量操作，节省资源
-                if (index > BATCH_SIZE) {
-//                    updateRedis();
+                if (index >= BATCH_SIZE) {
+                    updateRedis();
                     hostCount.clear();
                     writeToHDFS();
                     messages.clear();
@@ -235,6 +235,7 @@ public class WhiteListFilterOperator implements TransformInterface {
         } finally {
             try {
                 output.close();
+                fs.close();
             } catch (IOException e) {
                 LOG.error("HDFS关闭输出流异常", e);
             }

@@ -1,7 +1,7 @@
 package com.scistor.process.utils;
 
-import com.scistor.process.operator.impl.WhiteListFilterOperator;
 import com.scistor.process.pojo.DataInfo;
+import com.scistor.process.utils.params.SystemConfig;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import redis.clients.jedis.HostAndPort;
@@ -9,7 +9,6 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPool;
 
-import java.io.IOException;
 import java.util.*;
 
 /**
@@ -24,12 +23,14 @@ public class RedisUtil {
 
     static {
         Set<HostAndPort> jedisClusterNodes = new HashSet<HostAndPort>();
-        jedisClusterNodes.add(new HostAndPort("172.16.18.234", 7000));
-        jedisClusterNodes.add(new HostAndPort("172.16.18.234", 7001));
-        jedisClusterNodes.add(new HostAndPort("172.16.18.234", 7002));
-        jedisClusterNodes.add(new HostAndPort("172.16.18.234", 7003));
-        jedisClusterNodes.add(new HostAndPort("172.16.18.234", 7004));
-        jedisClusterNodes.add(new HostAndPort("172.16.18.234", 7005));
+        String redisCluster = SystemConfig.getString("redis_cluster");
+        String[] servers = redisCluster.split(",");
+        for (String server : servers) {
+            String[] ip_port = server.split(":");
+            String ip = ip_port[0];
+            String port = ip_port[1];
+            jedisClusterNodes.add(new HostAndPort(ip, Integer.parseInt(port)));
+        }
         jedisCluster = new JedisCluster(jedisClusterNodes);
     }
 
