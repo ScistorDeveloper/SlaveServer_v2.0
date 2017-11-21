@@ -3,10 +3,15 @@ package com.scistor.process;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.scistor.process.operator.impl.WhiteListFilterOperator;
+import com.scistor.process.utils.params.SystemConfig;
 import org.apache.commons.lang.StringUtils;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.*;
 
 import java.io.*;
 import java.lang.reflect.Field;
+import java.net.URI;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -19,21 +24,46 @@ public class Test {
 //        BufferedReader br = new BufferedReader(new FileReader(file));
 //        Map<String,String> data = getMap(br);
 
-        Class clazz = null;
+//        Class clazz = null;
+//        try {
+//            clazz = Class.forName("com.scistor.process.operator.impl.WhiteListFilterOperator");
+//            Object o = clazz.newInstance();
+//            Field[] fields = clazz.getDeclaredFields();
+//            for( Field field : fields ){
+//                if (field.getName().equals("shutdown")) {
+//                    field.setAccessible(true);
+//                    field.setBoolean(o, false);
+//                }
+//            }
+//            WhiteListFilterOperator w = new WhiteListFilterOperator();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+
+        Configuration conf = new Configuration();
+        String hdfsURI = SystemConfig.getString("hdfsURI");
+        conf.set("fs.defaultFS", hdfsURI);
+        //拿到一个文件系统操作的客户端实例对象
+        FileSystem fs = null;
         try {
-            clazz = Class.forName("com.scistor.process.operator.impl.WhiteListFilterOperator");
-            Object o = clazz.newInstance();
-            Field[] fields = clazz.getDeclaredFields();
-            for( Field field : fields ){
-                if (field.getName().equals("shutdown")) {
-                    field.setAccessible(true);
-                    field.setBoolean(o, false);
-                }
-            }
-            WhiteListFilterOperator w = new WhiteListFilterOperator();
-            System.out.println(w.isShutdown());
+            fs = FileSystem.get(new URI(hdfsURI), conf, SystemConfig.getString("hadoop_user"));
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(String.format("获取文件系统出现异常:[%s]", e));
+        }
+
+        FSDataOutputStream output = null;
+        try {
+            output = fs.create(new Path("/data", System.currentTimeMillis()+".log"));
+            output.write("abcdefg".getBytes("UTF-8"));
+            output.flush();
+        } catch (Exception e) {
+            System.out.println(String.format("写HDFS出现异常:[%s]", e));
+        } finally {
+            try {
+                output.close();
+            } catch (IOException e) {
+                System.out.println(String.format("HDFS关闭输出流异常:[%s]", e));
+            }
         }
 
     }
