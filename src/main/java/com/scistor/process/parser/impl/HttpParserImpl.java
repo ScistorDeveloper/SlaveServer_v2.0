@@ -23,7 +23,7 @@ import java.util.zip.ZipFile;
 public class HttpParserImpl implements IParser {
 
     private static final Logger LOG =  Logger.getLogger(HttpParserImpl.class);
-    private static final String ROOTDIR = "D:\\HS\\fulltext";
+    private static final String ROOTDIR = "/home/hadoop/apps/HS/fulltext";//D:\HS\fulltext
     private static List<String> handledDirs = new ArrayList<String>();
 
     @Override
@@ -107,6 +107,7 @@ public class HttpParserImpl implements IParser {
 
     private static Map<String,String> getMap(BufferedReader br) throws Exception {
         String host = "";
+        String url = "";
         Map<String,String> data = new HashMap<String, String>();
         List<String> lines = new ArrayList<String>();
         String line;
@@ -117,12 +118,16 @@ public class HttpParserImpl implements IParser {
                     host = line.split(":")[1].trim();
                 }
                 lines.add(line.trim());
-            }else{
+            } else if ("GET".equals(line.substring(0, 3)) || "POST".equals(line.substring(0, 4))) {
+                url = line.split(" ")[2];
+                lines.add(line.trim());
+            } else{
                 lines.add(line.trim());
             }
         }
         if(lines.size() > 0) {
             data.put("host", host);
+            data.put("url", url);
             line = StringUtils.join(lines, "[[--]]");
             if (line.indexOf("GET") >= 0) {
                 //GET 数据
