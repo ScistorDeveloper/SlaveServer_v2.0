@@ -208,7 +208,7 @@ public class WhiteListFilterOperator implements TransformInterface {
             String host = it.next();
             Map<String, String> hostMap = RedisUtil.getHost(host);
             Map<String, String> map = new HashMap<String, String>();
-            if (null == hostMap) {
+            if (hostMap.size() == 0) {
                 map.put(KEY1, "1");
                 map.put(KEY2, "0");
                 RedisUtil.put(host, map);
@@ -235,7 +235,6 @@ public class WhiteListFilterOperator implements TransformInterface {
         } finally {
             try {
                 output.close();
-                fs.close();
             } catch (IOException e) {
                 LOG.error("HDFS关闭输出流异常", e);
             }
