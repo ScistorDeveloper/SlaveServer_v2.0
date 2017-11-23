@@ -89,6 +89,7 @@ public class WhiteListFilterOperator implements TransformInterface {
             Configuration conf = new Configuration();
             String hdfsURI = SystemConfig.getString("hdfsURI");
             conf.set("fs.defaultFS", hdfsURI);
+            conf.set("fs.hdfs.impl", "org.apache.hadoop.hdfs.DistributedFileSystem");
             //拿到一个文件系统操作的客户端实例对象
             try {
                 fs = FileSystem.get(new URI(hdfsURI), conf, SystemConfig.getString("hadoop_user"));
