@@ -6,10 +6,14 @@ import com.scistor.process.controller.OperatorScheduler;
 import com.scistor.process.parser.IParser;
 import com.scistor.process.record.Record;
 import com.scistor.process.record.extend.HttpRecord;
+import com.scistor.process.utils.ZKOperator;
+import com.scistor.process.utils.params.SystemConfig;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.zookeeper.ZooKeeper;
 
 import java.io.*;
+import java.net.InetAddress;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -37,25 +41,40 @@ public class HttpParserImpl implements IParser {
     }
 
     private void monitorRootDir() throws Exception {
+        String hostAddress = InetAddress.getLocalHost().getHostAddress();
+        Integer port = Integer.parseInt(SystemConfig.getString("thrift_server_port"));
+        String NET = hostAddress + ":" + port;
         while(true) {
             System.out.println("updating...");
             File rootFileDir = new File(ROOTDIR);
             File[] dayFileDirs = rootFileDir.listFiles();
+            List<File> dayFileList = Arrays.asList(dayFileDirs);
+            Collections.sort(dayFileList, new Comparator<File>() {
+                @Override
+                public int compare(File o1, File o2) {
+                    if (o1.isDirectory() && o2.isFile())
+                        return -1;
+                    if (o1.isFile() && o2.isDirectory())
+                        return 1;
+                    return o1.getName().compareTo(o2.getName());
+                }
+            });
             List<File> fileList = new ArrayList<File>();
-            for (File dir : dayFileDirs) {
-                if (!handledDirs.contains(dir.getName())) {
+            ZooKeeper zooKeeper = ZKOperator.getZookeeperInstance();
+            for (File dir : dayFileList) {
+                //并且文件名大于当前zookeeper上存放的最近已处理的文件名
+                String dayDirName = new String(zooKeeper.getData("/HS/dirs/" + NET, false, null));
+                if (Integer.parseInt(dir.getName()) > Integer.parseInt(dayDirName)) {
                     getFileList(dir, fileList);
-                    int current = 1;
                     for (File zipFile : fileList) {
-                        System.out.println(String.format("current zip file is:[%s]", current));
                         parse(zipFile);
-                        current++;
-                        Thread.sleep(20);
                     }
-                    handledDirs.add(dir.getName());
+                    //更新zookeeper上最近处理的文件
+                    zooKeeper.setData("/HS/dirs/" + NET, dir.getName().getBytes(), -1);
                 }
             }
-            Thread.sleep(1000);
+            zooKeeper.close();
+            Thread.sleep(24 * 60 * 60 * 1000);
         }
     }
 
