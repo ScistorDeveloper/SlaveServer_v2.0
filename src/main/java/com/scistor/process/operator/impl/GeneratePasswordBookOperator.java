@@ -162,6 +162,7 @@ public class GeneratePasswordBookOperator implements TransformInterface, Running
 
         public void run() {
             ConsumerIterator<byte[], byte[]> iterator = kafkaStream.iterator();
+            long start = System.currentTimeMillis();
             while (iterator.hasNext()) {
                 String message = new String(iterator.next().message());
                 LOG.info(String.format("已经在Kafka topic:[%s], 消费一条数据:[%s]", topic, message));
@@ -184,14 +185,14 @@ public class GeneratePasswordBookOperator implements TransformInterface, Running
                     set.add(record);
                     records.put(host, set);
                 }
+                //进行批量操作，节省资源
+                long current = System.currentTimeMillis();
+                if (current - start > 10000) {
+                    writeToHDFS();
+                    records.clear();
+                    start = System.currentTimeMillis();
+                }
             }
-            //进行批量操作，节省资源
-            if (index >= BATCH_SIZE) {
-                writeToHDFS();
-                records.clear();
-                index = 0;
-            }
-            index++;
             System.out.println("end.......");
         }
 

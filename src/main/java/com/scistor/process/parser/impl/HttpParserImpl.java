@@ -27,7 +27,7 @@ import java.util.zip.ZipFile;
 public class HttpParserImpl implements IParser {
 
     private static final Logger LOG =  Logger.getLogger(HttpParserImpl.class);
-    private static final String ROOTDIR = "/home/hadoop/apps/HS/fulltext";//D:\HS\fulltext,/home/hadoop/apps/HS/fulltext
+    private static final String ROOTDIR = "D:\\HS\\fulltext";//D:\HS\fulltext,/home/hadoop/apps/HS/fulltext
     private static List<String> handledDirs = new ArrayList<String>();
 
     @Override
