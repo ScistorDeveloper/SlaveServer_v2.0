@@ -56,16 +56,6 @@ public class HttpParserImpl implements IParser {
                 }
             });
             List<File> dayFileList = Arrays.asList(dayFileDirs);
-            Collections.sort(dayFileList, new Comparator<File>() {
-                @Override
-                public int compare(File o1, File o2) {
-                    if (o1.isDirectory() && o2.isFile())
-                        return -1;
-                    if (o1.isFile() && o2.isDirectory())
-                        return 1;
-                    return o1.getName().compareTo(o2.getName());
-                }
-            });
             List<File> fileList = new ArrayList<File>();
             for (File dir : dayFileList) {
                 getFileList(dir, fileList);
