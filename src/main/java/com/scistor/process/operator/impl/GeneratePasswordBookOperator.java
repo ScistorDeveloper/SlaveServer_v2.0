@@ -206,7 +206,7 @@ public class GeneratePasswordBookOperator implements TransformInterface, Running
                 Map.Entry<String, Set<Map<String, String>>> next = iterator.next();
                 String key = next.getKey();
                 Set<Map<String, String>> values = next.getValue();
-                output = fs.create(new Path(PATH, key));
+                output = fs.create(new Path(PATH, key), false);
                 for(Map<String, String> value : values) { // 写入数据
                     String username = value.get("username");
                     String password = value.get("password");
