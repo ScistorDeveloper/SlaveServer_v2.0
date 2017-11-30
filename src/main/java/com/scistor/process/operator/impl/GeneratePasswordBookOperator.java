@@ -207,12 +207,10 @@ public class GeneratePasswordBookOperator implements TransformInterface, Running
                 Map.Entry<String, Set<Map<String, String>>> next = iterator.next();
                 String key = next.getKey();
                 Set<Map<String, String>> values = next.getValue();
-                boolean exists = fs.exists(new Path(PATH, key));
-                if (!exists) {
-                    output = fs.create(new Path(PATH, key));
-                } else {
-                    output = fs.append(new Path(PATH, key));
+                if (!fs.exists(new Path(PATH, key))) {
+                    fs.create(new Path(PATH, key)).close();
                 }
+                output = fs.append(new Path(PATH, key));
                 for(Map<String, String> value : values) { // 写入数据
                     String username = value.get("username");
                     String password = value.get("password");
@@ -220,8 +218,9 @@ public class GeneratePasswordBookOperator implements TransformInterface, Running
                     object.put("username", username);
                     object.put("password", password);
                     output.write((object.toJSONString() + "\n").getBytes("UTF-8"));
-                    output.flush();
                 }
+                output.flush();
+                output.close();
             }
         } catch (Exception e) {
             LOG.error("写HDFS出现异常", e);
