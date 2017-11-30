@@ -21,6 +21,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
@@ -231,7 +232,7 @@ public class WhiteListFilterOperator implements TransformInterface {
         try {
             IntWritable key = new IntWritable();
             Text value = new Text();
-            writer = SequenceFile.createWriter(fs, conf, new Path(PATH, System.currentTimeMillis()+".seq"), key.getClass(),value.getClass(), SequenceFile.CompressionType.NONE);
+            writer = SequenceFile.createWriter(fs, conf, new Path(PATH, System.currentTimeMillis()+".seq"), key.getClass(),value.getClass(), SequenceFile.CompressionType.RECORD);
             int i = 1;
             for(String message : messages) { // 写入数据
                 key.set(i);
@@ -243,11 +244,7 @@ public class WhiteListFilterOperator implements TransformInterface {
         } catch (Exception e) {
             LOG.error("写HDFS出现异常", e);
         } finally {
-            try {
-                writer.close();
-            } catch (IOException e) {
-                LOG.error("HDFS关闭输出流异常", e);
-            }
+            IOUtils.closeStream(writer);
         }
     }
 
