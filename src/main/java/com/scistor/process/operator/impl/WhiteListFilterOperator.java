@@ -231,7 +231,7 @@ public class WhiteListFilterOperator implements TransformInterface {
         try {
             IntWritable key = new IntWritable();
             Text value = new Text();
-            writer = SequenceFile.createWriter(fs, conf, new Path(PATH, System.currentTimeMillis()+".data"), key.getClass(),value.getClass(), SequenceFile.CompressionType.NONE);
+            writer = SequenceFile.createWriter(fs, conf, new Path(PATH, System.currentTimeMillis()+".seq"), key.getClass(),value.getClass(), SequenceFile.CompressionType.NONE);
             int i = 1;
             for(String message : messages) { // 写入数据
                 key.set(i);
