@@ -158,7 +158,7 @@ public class HttpParserImpl implements IParser {
                     }
                 }catch (Exception e){
                     //数据乱码等问题
-                    LOG.error("解析GET数据异常, 数据中可能包含乱码或JSON格式不正确", e);
+                    LOG.error("解析GET数据异常, 数据中可能包含乱码或JSON格式不正确");
                     data.clear();
                     return data;
                 }
