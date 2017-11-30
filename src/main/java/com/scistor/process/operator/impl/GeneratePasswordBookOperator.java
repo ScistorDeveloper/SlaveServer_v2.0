@@ -1,20 +1,16 @@
 package com.scistor.process.operator.impl;
 
-import com.google.common.hash.BloomFilter;
-import com.google.common.hash.Funnels;
+import com.alibaba.fastjson.JSONObject;
 import com.scistor.process.operator.TransformInterface;
 import com.scistor.process.record.Record;
 import com.scistor.process.record.extend.HttpRecord;
-import com.scistor.process.utils.Map2String;
-import com.scistor.process.utils.RedisUtil;
-import com.scistor.process.utils.TopicUtil;
+import com.scistor.process.utils.params.RunningConfig;
 import com.scistor.process.utils.params.SystemConfig;
 import kafka.consumer.Consumer;
 import kafka.consumer.ConsumerConfig;
 import kafka.consumer.ConsumerIterator;
 import kafka.consumer.KafkaStream;
 import kafka.javaapi.consumer.ConsumerConnector;
-import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -24,28 +20,21 @@ import org.apache.hadoop.fs.Path;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 
-/**
- * Created by WANG Shenghua on 2017/11/18.
- */
-public class WhiteListFilterOperator implements TransformInterface {
+public class GeneratePasswordBookOperator implements TransformInterface, RunningConfig
+{
 
-    private static final Log LOG = LogFactory.getLog(WhiteListFilterOperator.class);
+    private static final Log LOG = LogFactory.getLog(GeneratePasswordBookOperator.class);
     private static boolean shutdown = true;
-    private static final String KEY1 = "COUNT";
-    private static final String KEY2 = "STATUS";
-    private static final String PATH = "/data";
+    private static final String PATH = "/PasswordBook";
     private static final Integer BATCH_SIZE = 1000;
     private Integer index = 1;
     private String zookeeper_addr;
-    private String topic = "com.scistor.process.operator.impl.WhiteListFilterOperator";
+    private String topic = "com.scistor.process.operator.impl.GeneratePasswordBookOperator";
     private String mainclass;
     private String task_type;
     private ArrayBlockingQueue<Record> queue;
@@ -54,8 +43,7 @@ public class WhiteListFilterOperator implements TransformInterface {
     private ConsumerConnector consumer;
     private FileSystem fs;
     private Map<String, Integer> topicCountMap = new HashMap<String, Integer>();
-    private Map<String, Integer> hostCount = new HashedMap();
-    private List<String> messages = new ArrayList<String>();
+    private Map<String, Set<Map<String, String>>> records = new HashMap<String, Set<Map<String, String>>>();
 
     @Override
     public void init(Map<String, String> config, ArrayBlockingQueue<Record> queue) {
@@ -93,7 +81,7 @@ public class WhiteListFilterOperator implements TransformInterface {
             try {
                 fs = FileSystem.get(new URI(hdfsURI), conf, SystemConfig.getString("hadoop_user"));
             } catch (Exception e) {
-               LOG.error("获取文件系统出现异常", e);
+                LOG.error("获取文件系统出现异常", e);
             }
         }
     }
@@ -111,15 +99,13 @@ public class WhiteListFilterOperator implements TransformInterface {
                 if(queue.size() > 0) {
                     Map<String, String> record = ((HttpRecord)queue.take()).getRecord();
                     String host = record.get("host");
-                    if (null != host && !"".equals(host)) {
-//                        boolean contained = isHostInWhiteList(host);
-//                        if (!contained) {
-                            //不在白名单中的发送到kafka中
-                            String line = Map2String.transMapToString(record);
-                            ProducerRecord<String, String> kafkaRecord = new ProducerRecord<String, String>(topic, UUID.randomUUID().toString(), host+"|| "+line);
-                            producer.send(kafkaRecord).get();
-                            LOG.info(String.format("一条数据[%s]已经写入Kafka, topic:[%s]", host+"|| "+line, topic));
-//                        }
+                    String username = record.get("username");
+                    String password = record.get("password");
+                    if (!isBlank(host) && !isBlank(username) && !isBlank(password)) {
+                        String line = host + "||" + username + "||" + password;
+                        ProducerRecord<String, String> kafkaRecord = new ProducerRecord<String, String>(topic, UUID.randomUUID().toString(), line);
+                        producer.send(kafkaRecord).get();
+                        LOG.info(String.format("一条数据[%s]已经写入Kafka, topic:[%s]", line, topic));
                     }
                 }else {
                     System.out.println("waiting...");
@@ -136,7 +122,6 @@ public class WhiteListFilterOperator implements TransformInterface {
 
     @Override
     public void consumer() {
-
         Map<String, List<KafkaStream<byte[], byte[]>>> msgStreams = consumer.createMessageStreams(topicCountMap);
         List<KafkaStream<byte[], byte[]>> msgStreamList = msgStreams.get(topic);
 
@@ -149,12 +134,11 @@ public class WhiteListFilterOperator implements TransformInterface {
 
         while (true) {
             if (shutdown) {
-                LOG.info("WhiteListFilterOperator SHUTDOWN!!!!!");
+                LOG.info("GeneratePasswordBookOperator SHUTDOWN!!!!!");
                 consumer.shutdown();
                 break;
             }
         }
-
     }
 
     @Override
@@ -180,55 +164,57 @@ public class WhiteListFilterOperator implements TransformInterface {
             ConsumerIterator<byte[], byte[]> iterator = kafkaStream.iterator();
             while (iterator.hasNext()) {
                 String message = new String(iterator.next().message());
-                messages.add(message);
-                String host = message.split("\\|\\|")[0];
-                if(hostCount.get(host) == null) {
-                    hostCount.put(host, 1);
-                } else {
-                    hostCount.put(host, hostCount.get(host) + 1);
-                }
-                //进行批量操作，节省资源
-                if (index >= BATCH_SIZE) {
-                    updateRedis();
-                    hostCount.clear();
-                    writeToHDFS();
-                    messages.clear();
-                    index = 0;
-                }
-                index++;
                 LOG.info(String.format("已经在Kafka topic:[%s], 消费一条数据:[%s]", topic, message));
+                String[] split = message.split("\\|\\|");
+                String host = split[0];
+                String username = split[1];
+                String password = split[2];
+                Set<Map<String, String>> set = records.get(host);
+                if (null == set) {
+                    set = new HashSet<Map<String, String>>();
+                    Map<String, String> record = new HashMap<String, String>();
+                    record.put("username", username);
+                    record.put("password", password);
+                    set.add(record);
+                    records.put(host, set);
+                } else {
+                    Map<String, String> record = new HashMap<String, String>();
+                    record.put("username", username);
+                    record.put("password", password);
+                    set.add(record);
+                    records.put(host, set);
+                }
             }
+            //进行批量操作，节省资源
+            if (index >= BATCH_SIZE) {
+                writeToHDFS();
+                records.clear();
+                index = 0;
+            }
+            index++;
+            System.out.println("end.......");
         }
 
-    }
-
-    private void updateRedis() {
-        Iterator<String> it = hostCount.keySet().iterator();
-        while (it.hasNext()) {
-            String host = it.next();
-            Map<String, String> hostMap = RedisUtil.getHost(host);
-            Map<String, String> map = new HashMap<String, String>();
-            if (hostMap.size() == 0) {
-                map.put(KEY1, "1");
-                map.put(KEY2, "0");
-                RedisUtil.put(host, map);
-            } else {
-                int newCount = Integer.parseInt(hostMap.get(KEY1)) + hostCount.get(host);
-                String status = hostMap.get(KEY2);
-                map.put(KEY1, newCount + "");
-                map.put(KEY2, status);
-                RedisUtil.put(host, map);
-            }
-        }
     }
 
     public void writeToHDFS() {
         FSDataOutputStream output = null;
         try {
-            output = fs.create(new Path(PATH, System.currentTimeMillis()+".data"));
-            for(String message : messages) { // 写入数据
-                output.write((message + "\n").getBytes("UTF-8"));
-                output.flush();
+            Iterator<Map.Entry<String, Set<Map<String, String>>>> iterator = records.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<String, Set<Map<String, String>>> next = iterator.next();
+                String key = next.getKey();
+                Set<Map<String, String>> values = next.getValue();
+                output = fs.create(new Path(PATH, key));
+                for(Map<String, String> value : values) { // 写入数据
+                    String username = value.get("username");
+                    String password = value.get("password");
+                    JSONObject object = new JSONObject();
+                    object.put("username", username);
+                    object.put("password", password);
+                    output.write((object.toJSONString() + "\n").getBytes("UTF-8"));
+                    output.flush();
+                }
             }
         } catch (Exception e) {
             LOG.error("写HDFS出现异常", e);
@@ -241,26 +227,12 @@ public class WhiteListFilterOperator implements TransformInterface {
         }
     }
 
-    private boolean isHostInWhiteList(String host) {
-        BloomFilter<CharSequence> bloomFilter = generateBloomFilter();
-        boolean mightContain = bloomFilter.mightContain(host);
-        if (mightContain) {
-            return true;
-        } else {
-            return false;
+    private boolean isBlank(String str) {
+        boolean flag = false;
+        if (null == str || str.equals("")) {
+            flag = true;
         }
-    }
-
-    private static BloomFilter<CharSequence> generateBloomFilter() {
-        LOG.info(String.format("Start to generate the BloomFilter!"));
-        BloomFilter<CharSequence> filter = BloomFilter.create(Funnels.stringFunnel(), 100, 0.0001F);
-        TreeSet<String> keySets = RedisUtil.getRedisKeys();
-        Iterator<String> it = keySets.iterator();
-        while (it.hasNext()) {
-            filter.put(it.next());
-        }
-        LOG.info(String.format("The BloomFilter has been generated!"));
-        return filter;
+        return flag;
     }
 
 }
