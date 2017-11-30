@@ -21,6 +21,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.Text;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
@@ -52,6 +55,7 @@ public class WhiteListFilterOperator implements TransformInterface {
     private String broker_list;
     private KafkaProducer producer;
     private ConsumerConnector consumer;
+    private  Configuration conf;
     private FileSystem fs;
     private Map<String, Integer> topicCountMap = new HashMap<String, Integer>();
     private Map<String, Integer> hostCount = new HashedMap();
@@ -85,7 +89,7 @@ public class WhiteListFilterOperator implements TransformInterface {
             consumer = Consumer.createJavaConsumerConnector(new ConsumerConfig(props));
             shutdown = false;
             //初始化Hadoop连接
-            Configuration conf = new Configuration();
+            conf = new Configuration();
             String hdfsURI = SystemConfig.getString("hdfsURI");
             conf.set("fs.defaultFS", hdfsURI);
             conf.set("fs.hdfs.impl", "org.apache.hadoop.hdfs.DistributedFileSystem");
@@ -223,18 +227,24 @@ public class WhiteListFilterOperator implements TransformInterface {
     }
 
     public void writeToHDFS() {
-        FSDataOutputStream output = null;
+        SequenceFile.Writer writer = null;
         try {
-            output = fs.create(new Path(PATH, System.currentTimeMillis()+".data"));
+            IntWritable key = new IntWritable();
+            Text value = new Text();
+            writer = SequenceFile.createWriter(fs, conf, new Path(PATH, System.currentTimeMillis()+".data"), key.getClass(),value.getClass(), SequenceFile.CompressionType.NONE);
+            int i = 1;
             for(String message : messages) { // 写入数据
-                output.write((message + "\n").getBytes("UTF-8"));
-                output.flush();
+                key.set(i);
+                value.set((message + "\n").getBytes("UTF-8"));
+                writer.append(key, value);
+                writer.hflush();
+                i++;
             }
         } catch (Exception e) {
             LOG.error("写HDFS出现异常", e);
         } finally {
             try {
-                output.close();
+                writer.close();
             } catch (IOException e) {
                 LOG.error("HDFS关闭输出流异常", e);
             }
