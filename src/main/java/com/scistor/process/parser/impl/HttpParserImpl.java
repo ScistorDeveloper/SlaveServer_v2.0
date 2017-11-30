@@ -47,7 +47,14 @@ public class HttpParserImpl implements IParser {
         while(true) {
             System.out.println("updating...");
             File rootFileDir = new File(ROOTDIR);
-            File[] dayFileDirs = rootFileDir.listFiles();
+            ZooKeeper zooKeeper = ZKOperator.getZookeeperInstance();
+            final String dayDirName = new String(zooKeeper.getData("/HS/dirs/" + NET, false, null));
+            File[] dayFileDirs = rootFileDir.listFiles(new FilenameFilter() {
+                @Override
+                public boolean accept(File dir, String name) {
+                    return Integer.parseInt(name) > Integer.parseInt(dayDirName);
+                }
+            });
             List<File> dayFileList = Arrays.asList(dayFileDirs);
             Collections.sort(dayFileList, new Comparator<File>() {
                 @Override
@@ -60,18 +67,13 @@ public class HttpParserImpl implements IParser {
                 }
             });
             List<File> fileList = new ArrayList<File>();
-            ZooKeeper zooKeeper = ZKOperator.getZookeeperInstance();
             for (File dir : dayFileList) {
-                //并且文件名大于当前zookeeper上存放的最近已处理的文件名
-                String dayDirName = new String(zooKeeper.getData("/HS/dirs/" + NET, false, null));
-                if (Integer.parseInt(dir.getName()) > Integer.parseInt(dayDirName)) {
-                    getFileList(dir, fileList);
-                    for (File zipFile : fileList) {
-                        parse(zipFile);
-                    }
-                    //更新zookeeper上最近处理的文件
-                    zooKeeper.setData("/HS/dirs/" + NET, dir.getName().getBytes(), -1);
+                getFileList(dir, fileList);
+                for (File zipFile : fileList) {
+                    parse(zipFile);
                 }
+                //更新zookeeper上最近处理的文件
+                zooKeeper.setData("/HS/dirs/" + NET, dir.getName().getBytes(), -1);
             }
             zooKeeper.close();
             Thread.sleep(24 * 60 * 60 * 1000);
