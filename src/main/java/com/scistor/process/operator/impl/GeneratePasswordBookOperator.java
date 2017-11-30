@@ -167,9 +167,9 @@ public class GeneratePasswordBookOperator implements TransformInterface, Running
                 String message = new String(iterator.next().message());
                 LOG.info(String.format("已经在Kafka topic:[%s], 消费一条数据:[%s]", topic, message));
                 String[] split = message.split("\\|\\|");
-                String host = split[0];
-                String username = split[1];
-                String password = split[2];
+                String host = split[0].trim();
+                String username = split[1].trim();
+                String password = split[2].trim();
                 Set<Map<String, String>> set = records.get(host);
                 if (null == set) {
                     set = new HashSet<Map<String, String>>();
