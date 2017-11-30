@@ -103,7 +103,10 @@ public class GeneratePasswordBookForSpecificHostOperator implements TransformInt
                     String host = record.get("host");
                     String username = record.get("username");
                     String password = record.get("password");
-                    if (!isBlank(host) && !isBlank(username) && !isBlank(password) && host.equals(specificHost)) {
+                    if (host.equals("web.7k7k.com")) {
+                        System.out.println("1111111111111111111111111111111111111");
+                    }
+                    if (!isBlank(host) && !isBlank(username) && !isBlank(password) && host.trim().equals(specificHost)) {
                         String line = host + "||" + username + "||" + password;
                         ProducerRecord<String, String> kafkaRecord = new ProducerRecord<String, String>(topic, UUID.randomUUID().toString(), line);
                         producer.send(kafkaRecord).get();
