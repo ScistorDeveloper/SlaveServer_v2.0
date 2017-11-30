@@ -77,6 +77,7 @@ public class GeneratePasswordBookOperator implements TransformInterface, Running
             String hdfsURI = SystemConfig.getString("hdfsURI");
             conf.set("fs.defaultFS", hdfsURI);
             conf.set("fs.hdfs.impl", "org.apache.hadoop.hdfs.DistributedFileSystem");
+            conf.setBoolean("dfs.support.append", true);
             //拿到一个文件系统操作的客户端实例对象
             try {
                 fs = FileSystem.get(new URI(hdfsURI), conf, SystemConfig.getString("hadoop_user"));
@@ -206,7 +207,12 @@ public class GeneratePasswordBookOperator implements TransformInterface, Running
                 Map.Entry<String, Set<Map<String, String>>> next = iterator.next();
                 String key = next.getKey();
                 Set<Map<String, String>> values = next.getValue();
-                output = fs.create(new Path(PATH, key), false);
+                boolean exists = fs.exists(new Path(PATH, key));
+                if (!exists) {
+                    output = fs.create(new Path(PATH, key));
+                } else {
+                    output = fs.append(new Path(PATH, key));
+                }
                 for(Map<String, String> value : values) { // 写入数据
                     String username = value.get("username");
                     String password = value.get("password");
