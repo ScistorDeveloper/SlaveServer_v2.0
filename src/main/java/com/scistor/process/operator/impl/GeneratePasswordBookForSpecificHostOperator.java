@@ -97,23 +97,20 @@ public class GeneratePasswordBookForSpecificHostOperator implements TransformInt
     public void producer() {
         try {
             while(true){
-                System.out.println("producing...");
+                LOG.debug("producing...");
                 if(queue.size() > 0) {
                     Map<String, String> record = ((HttpRecord)queue.take()).getRecord();
                     String host = record.get("host");
                     String username = record.get("username");
                     String password = record.get("password");
-                    if (host.equals("web.7k7k.com")) {
-                        System.out.println("1111111111111111111111111111111111111");
-                    }
                     if (!isBlank(host) && !isBlank(username) && !isBlank(password) && host.trim().equals(specificHost)) {
                         String line = host + "||" + username + "||" + password;
                         ProducerRecord<String, String> kafkaRecord = new ProducerRecord<String, String>(topic, UUID.randomUUID().toString(), line);
                         producer.send(kafkaRecord).get();
-                        LOG.info(String.format("一条数据[%s]已经写入Kafka, topic:[%s]", line, topic));
+                        LOG.debug(String.format("一条数据[%s]已经写入Kafka, topic:[%s]", line, topic));
                     }
                 }else {
-                    System.out.println("waiting...");
+                    LOG.debug("waiting...");
                     Thread.sleep(1000);
                 }
             }
@@ -170,7 +167,7 @@ public class GeneratePasswordBookForSpecificHostOperator implements TransformInt
             long start = System.currentTimeMillis();
             while (iterator.hasNext()) {
                 String message = new String(iterator.next().message());
-                LOG.info(String.format("已经在Kafka topic:[%s], 消费一条数据:[%s]", topic, message));
+                LOG.debug(String.format("已经在Kafka topic:[%s], 消费一条数据:[%s]", topic, message));
                 String[] split = message.split("\\|\\|");
                 String host = split[0].trim();
                 String username = split[1].trim();
@@ -198,7 +195,6 @@ public class GeneratePasswordBookForSpecificHostOperator implements TransformInt
                     start = System.currentTimeMillis();
                 }
             }
-            System.out.println("end.......");
         }
 
     }

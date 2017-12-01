@@ -112,7 +112,7 @@ public class WhiteListFilterOperator implements TransformInterface {
     public void producer() {
         try {
             while(true){
-                System.out.println("producing...");
+                LOG.debug("producing...");
                 if(queue.size() > 0) {
                     Map<String, String> record = ((HttpRecord)queue.take()).getRecord();
                     String host = record.get("host");
@@ -123,11 +123,11 @@ public class WhiteListFilterOperator implements TransformInterface {
                             String line = Map2String.transMapToString(record);
                             ProducerRecord<String, String> kafkaRecord = new ProducerRecord<String, String>(topic, UUID.randomUUID().toString(), host+"|| "+line);
                             producer.send(kafkaRecord).get();
-                            LOG.info(String.format("一条数据[%s]已经写入Kafka, topic:[%s]", host+"|| "+line, topic));
+                            LOG.debug(String.format("一条数据[%s]已经写入Kafka, topic:[%s]", host+"|| "+line, topic));
 //                        }
                     }
                 }else {
-                    System.out.println("waiting...");
+                    LOG.debug("waiting...");
                     Thread.sleep(1000);
                 }
             }
@@ -201,7 +201,7 @@ public class WhiteListFilterOperator implements TransformInterface {
                     index = 0;
                 }
                 index++;
-                LOG.info(String.format("已经在Kafka topic:[%s], 消费一条数据:[%s]", topic, message));
+                LOG.debug(String.format("已经在Kafka topic:[%s], 消费一条数据:[%s]", topic, message));
             }
         }
 
