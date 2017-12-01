@@ -43,12 +43,13 @@ public class HttpParserImpl implements IParser {
     private void monitorRootDir() throws Exception {
         String hostAddress = InetAddress.getLocalHost().getHostAddress();
         Integer port = Integer.parseInt(SystemConfig.getString("thrift_server_port"));
+        String zooKeeperDirsPath = SystemConfig.getString("zk_dirs_path");
         String NET = hostAddress + ":" + port;
         while(true) {
             System.out.println("updating...");
             File rootFileDir = new File(ROOTDIR);
             ZooKeeper zooKeeper = ZKOperator.getZookeeperInstance();
-            final String dayDirName = new String(zooKeeper.getData("/HS/dirs/" + NET, false, null));
+            final String dayDirName = new String(zooKeeper.getData(zooKeeperDirsPath + "/" + NET, false, null));
             File[] dayFileDirs = rootFileDir.listFiles(new FilenameFilter() {
                 @Override
                 public boolean accept(File dir, String name) {
@@ -63,7 +64,7 @@ public class HttpParserImpl implements IParser {
                     parse(zipFile);
                 }
                 //更新zookeeper上最近处理的文件
-                zooKeeper.setData("/HS/dirs/" + NET, dir.getName().getBytes(), -1);
+                zooKeeper.setData(zooKeeperDirsPath + "/" + NET, dir.getName().getBytes(), -1);
             }
             zooKeeper.close();
             Thread.sleep(24 * 60 * 60 * 1000);
