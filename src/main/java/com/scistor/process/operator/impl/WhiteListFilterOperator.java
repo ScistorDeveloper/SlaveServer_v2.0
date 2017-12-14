@@ -117,14 +117,14 @@ public class WhiteListFilterOperator implements TransformInterface {
                     Map<String, String> record = ((HttpRecord)queue.take()).getRecord();
                     String host = record.get("host");
                     if (null != host && !"".equals(host)) {
-//                        boolean contained = isHostInWhiteList(host);
-//                        if (!contained) {
+                        boolean contained = isHostInWhiteList(host);
+                        if (!contained) {
                             //不在白名单中的发送到kafka中
                             String line = Map2String.transMapToString(record);
                             ProducerRecord<String, String> kafkaRecord = new ProducerRecord<String, String>(topic, UUID.randomUUID().toString(), host+"|| "+line);
                             producer.send(kafkaRecord).get();
                             LOG.debug(String.format("一条数据[%s]已经写入Kafka, topic:[%s]", host+"|| "+line, topic));
-//                        }
+                        }
                     }
                 }else {
                     LOG.debug("waiting...");

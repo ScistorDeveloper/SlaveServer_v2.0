@@ -16,4 +16,5 @@ do
 done
 
 export CLASSPATH=$CLASSPATH
-../jdk1.7.0_80/bin/java -jar ${script_path}/../MasterServer-1.0-SNAPSHOT.jar
+chmod a+x ${script_path}/../jdk1.7.0_80/bin/java
+${script_path}/../jdk1.7.0_80/bin/java -jar ${script_path}/../SlaveServer-1.0-SNAPSHOT.jar

@@ -1,6 +1,7 @@
 package com.scistor.process.parser.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.scistor.process.controller.OperatorScheduler;
 import com.scistor.process.parser.IParser;
@@ -27,7 +28,7 @@ import java.util.zip.ZipFile;
 public class HttpParserImpl implements IParser {
 
     private static final Logger LOG =  Logger.getLogger(HttpParserImpl.class);
-    private static final String ROOTDIR = "D:\\HS\\fulltext";//D:\HS\fulltext,/home/hadoop/apps/HS/fulltext
+    private static final String ROOTDIR = "/home/hadoop/apps/HS/fulltext";//D:\HS\fulltext,/home/hadoop/apps/HS/fulltext
     private static List<String> handledDirs = new ArrayList<String>();
 
     @Override
@@ -46,7 +47,7 @@ public class HttpParserImpl implements IParser {
         String zooKeeperDirsPath = SystemConfig.getString("zk_dirs_path");
         String NET = hostAddress + ":" + port;
         while(true) {
-            System.out.println("updating...");
+            LOG.debug("updating...");
             File rootFileDir = new File(ROOTDIR);
             ZooKeeper zooKeeper = ZKOperator.getZookeeperInstance();
             final String dayDirName = new String(zooKeeper.getData(zooKeeperDirsPath + "/" + NET, false, null));
@@ -94,7 +95,7 @@ public class HttpParserImpl implements IParser {
                 for (Map.Entry<String, ArrayBlockingQueue<Record>> entry : entrySet) {
                     ArrayBlockingQueue<Record> value = entry.getValue();
                     value.put(record);
-                    LOG.info(String.format("Operator:[%s]'s current ArrayBlockingQueue size is [%s]", entry.getKey(), value.size()));
+                    LOG.debug(String.format("Operator:[%s]'s current ArrayBlockingQueue size is [%s]", entry.getKey(), value.size()));
                 }
                 bufferedReader.close();
                 is.close();
@@ -166,13 +167,17 @@ public class HttpParserImpl implements IParser {
             } else {
                 //POST 数据
                 data.put("action_type","POST");
+                JSONArray array = new JSONArray();
                 for (String li : lines){
                     if(li.indexOf("[[:]]") >= 0 && li.split("\\[\\[:\\]\\]").length > 1){
-                        data.put(li.split("\\[\\[:\\]\\]")[0].toLowerCase(), li.split("\\[\\[:\\]\\]")[1]);
+                        JSONObject object = new JSONObject();
+                        object.put(li.split("\\[\\[:\\]\\]")[0].toLowerCase(), li.split("\\[\\[:\\]\\]")[1]);
+                        array.add(object);
                     }else if(li.indexOf(":") >= 0 && li.split(":").length > 1){
                         data.put(li.split(":")[0].toLowerCase(),li.split(":")[1]);
                     }
                 }
+                data.put("request_parameters", array.toJSONString());
             }
         }
         return data;
