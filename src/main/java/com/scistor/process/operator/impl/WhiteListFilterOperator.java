@@ -61,6 +61,18 @@ public class WhiteListFilterOperator implements TransformInterface {
     private Map<String, Integer> topicCountMap = new HashMap<String, Integer>();
     private Map<String, Integer> hostCount = new HashedMap();
     private List<String> messages = new ArrayList<String>();
+    private static BloomFilter<CharSequence> bloomFilter;
+
+    static {
+        LOG.info(String.format("Start to generate the BloomFilter!"));
+        TreeSet<String> keySets = RedisUtil.getWhiteListHost();
+        bloomFilter = BloomFilter.create(Funnels.stringFunnel(), keySets.size() * 100, 0.0001F);
+        Iterator<String> it = keySets.iterator();
+        while (it.hasNext()) {
+            bloomFilter.put(it.next());
+        }
+        LOG.info(String.format("The BloomFilter has been generated!"));
+    }
 
     @Override
     public void init(Map<String, String> config, ArrayBlockingQueue<Record> queue) {
@@ -249,25 +261,12 @@ public class WhiteListFilterOperator implements TransformInterface {
     }
 
     private boolean isHostInWhiteList(String host) {
-        BloomFilter<CharSequence> bloomFilter = generateBloomFilter();
         boolean mightContain = bloomFilter.mightContain(host);
         if (mightContain) {
             return true;
         } else {
             return false;
         }
-    }
-
-    private static BloomFilter<CharSequence> generateBloomFilter() {
-        LOG.info(String.format("Start to generate the BloomFilter!"));
-        BloomFilter<CharSequence> filter = BloomFilter.create(Funnels.stringFunnel(), 100, 0.0001F);
-        TreeSet<String> keySets = RedisUtil.getRedisKeys();
-        Iterator<String> it = keySets.iterator();
-        while (it.hasNext()) {
-            filter.put(it.next());
-        }
-        LOG.info(String.format("The BloomFilter has been generated!"));
-        return filter;
     }
 
 }

@@ -53,6 +53,34 @@ public class RedisUtil {
         return keys;
     }
 
+    public static TreeSet<String> getWhiteListHost () {
+        Map<String, JedisPool> clusterNodes = jedisCluster.getClusterNodes();
+        TreeSet<String> keys = new TreeSet<String>();
+        for(String k : clusterNodes.keySet()){
+            LOG.debug("Getting keys from: " + k);
+            JedisPool jp = clusterNodes.get(k);
+            Jedis connection = jp.getResource();
+            try {
+                Set<String> keySet = connection.keys("*");
+                keys.addAll(keySet);
+            } catch(Exception e){
+                LOG.error("Getting keys error: {}", e);
+            } finally{
+                LOG.debug("Connection closed.");
+                connection.close();
+            }
+        }
+        Iterator<String> it = keys.iterator();
+        while (it.hasNext()) {
+            String key = it.next();
+            List<String> hmget = jedisCluster.hmget(key, KEY2);
+            if (hmget.get(0).equals("0")) {
+                it.remove();
+            }
+        }
+        return keys;
+    }
+
     public static  Map<String, String> getHost(String host) {
         return jedisCluster.hgetAll(host);
     }

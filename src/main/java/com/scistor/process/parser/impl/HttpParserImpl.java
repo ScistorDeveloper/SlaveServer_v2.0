@@ -28,7 +28,7 @@ import java.util.zip.ZipFile;
 public class HttpParserImpl implements IParser {
 
     private static final Logger LOG =  Logger.getLogger(HttpParserImpl.class);
-    private static final String ROOTDIR = "/home/hadoop/apps/HS/fulltext";//D:\HS\fulltext,/home/hadoop/apps/HS/fulltext
+    private static final String ROOTDIR = "D:\\HS\\fulltext";//D:\HS\fulltext,/home/hadoop/apps/HS/fulltext
     private static List<String> handledDirs = new ArrayList<String>();
 
     @Override
@@ -73,7 +73,7 @@ public class HttpParserImpl implements IParser {
     }
 
     public void parse(File file) throws Exception {
-        System.out.println("parsing....");
+        LOG.debug("parsing....");
         ZipFile zipFile = new ZipFile(file, Charset.forName("GBK"));
         Enumeration entries = zipFile.entries();
         while(entries.hasMoreElements()) {
@@ -160,7 +160,6 @@ public class HttpParserImpl implements IParser {
                     }
                 }catch (Exception e){
                     //数据乱码等问题
-                    LOG.error("解析GET数据异常, 数据中可能包含乱码或JSON格式不正确");
                     data.clear();
                     return data;
                 }
@@ -171,7 +170,8 @@ public class HttpParserImpl implements IParser {
                 for (String li : lines){
                     if(li.indexOf("[[:]]") >= 0 && li.split("\\[\\[:\\]\\]").length > 1){
                         JSONObject object = new JSONObject();
-                        object.put(li.split("\\[\\[:\\]\\]")[0].toLowerCase(), li.split("\\[\\[:\\]\\]")[1]);
+                        object.put("key", li.split("\\[\\[:\\]\\]")[0].toLowerCase());
+                        object.put("value", li.split("\\[\\[:\\]\\]")[1]);
                         array.add(object);
                     }else if(li.indexOf(":") >= 0 && li.split(":").length > 1){
                         data.put(li.split(":")[0].toLowerCase(),li.split(":")[1]);
