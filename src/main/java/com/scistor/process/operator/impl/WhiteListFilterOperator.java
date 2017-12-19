@@ -47,6 +47,7 @@ public class WhiteListFilterOperator implements TransformInterface {
     private static final String KEY2 = "STATUS";
     private static final String PATH = "/data";
     private static final Integer BATCH_SIZE = 200000;
+    private static final Integer UPDATE_TIME = 60000;
     private Integer index = 1;
     private String zookeeper_addr;
     private String topic = "com.scistor.process.operator.impl.WhiteListFilterOperator";
@@ -64,14 +65,7 @@ public class WhiteListFilterOperator implements TransformInterface {
     private static BloomFilter<CharSequence> bloomFilter;
 
     static {
-        LOG.info(String.format("Start to generate the BloomFilter!"));
-        TreeSet<String> keySets = RedisUtil.getWhiteListHost();
-        bloomFilter = BloomFilter.create(Funnels.stringFunnel(), keySets.size() * 100, 0.0001F);
-        Iterator<String> it = keySets.iterator();
-        while (it.hasNext()) {
-            bloomFilter.put(it.next());
-        }
-        LOG.info(String.format("The BloomFilter has been generated!"));
+        updateBloomFilter();
     }
 
     @Override
@@ -123,7 +117,13 @@ public class WhiteListFilterOperator implements TransformInterface {
     @Override
     public void producer() {
         try {
+            long start = System.currentTimeMillis();
             while(true){
+                long end = System.currentTimeMillis();
+                if (end - start > UPDATE_TIME) {
+                    updateBloomFilter();
+                    start = System.currentTimeMillis();
+                }
                 LOG.debug("producing...");
                 if(queue.size() > 0) {
                     Map<String, String> record = ((HttpRecord)queue.take()).getRecord();
@@ -206,20 +206,11 @@ public class WhiteListFilterOperator implements TransformInterface {
                 }
                 //进行批量操作，节省资源
                 if (index >= BATCH_SIZE) {
-                    long start = System.currentTimeMillis();
-                    long start1 = System.currentTimeMillis();
                     updateRedis();
-                    long end1 = System.currentTimeMillis();
                     hostCount.clear();
-                    long start2 = System.currentTimeMillis();
                     writeToHDFS();
-                    long end2 = System.currentTimeMillis();
                     messages.clear();
                     index = 0;
-                    long end = System.currentTimeMillis();
-                    LOG.info(String.format("updateRedis consume time:[%s]s", (end1 - start1)/1000));
-                    LOG.info(String.format("writeToHDFS consume time:[%s]s", (end2 - start2)/1000));
-                    LOG.info(String.format("total consume time:[%s]s", (end - start)/1000));
                 }
                 index++;
                 LOG.debug(String.format("已经在Kafka topic:[%s], 消费一条数据:[%s]", topic, message));
@@ -276,6 +267,17 @@ public class WhiteListFilterOperator implements TransformInterface {
         } else {
             return false;
         }
+    }
+
+    private static void updateBloomFilter() {
+        LOG.info(String.format("Start to update the BloomFilter!"));
+        TreeSet<String> keySets = RedisUtil.getWhiteListHost();
+        bloomFilter = BloomFilter.create(Funnels.stringFunnel(), keySets.size() * 100, 0.0001F);
+        Iterator<String> it = keySets.iterator();
+        while (it.hasNext()) {
+            bloomFilter.put(it.next());
+        }
+        LOG.info(String.format("The BloomFilter has been updated!"));
     }
 
 }

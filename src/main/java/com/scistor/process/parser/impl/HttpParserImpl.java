@@ -170,9 +170,14 @@ public class HttpParserImpl implements IParser {
                 for (String li : lines){
                     if(li.indexOf("[[:]]") >= 0 && li.split("\\[\\[:\\]\\]").length > 1){
                         JSONObject object = new JSONObject();
-                        object.put("key", li.split("\\[\\[:\\]\\]")[0].toLowerCase());
-                        object.put("value", li.split("\\[\\[:\\]\\]")[1]);
+                        String key = li.split("\\[\\[:\\]\\]")[0].toLowerCase();
+                        String value = li.split("\\[\\[:\\]\\]")[1];
+                        object.put("key", key);
+                        object.put("value", value);
                         array.add(object);
+                        if (key.equals("username") || key.equals("password")) {
+                            data.put(key, value);
+                        }
                     }else if(li.indexOf(":") >= 0 && li.split(":").length > 1){
                         data.put(li.split(":")[0].toLowerCase(),li.split(":")[1]);
                     }
